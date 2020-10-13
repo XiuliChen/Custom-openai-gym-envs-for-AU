@@ -1,0 +1,10 @@
+
+> mkvirtualenv AUXC
+
+> brew install cmake openmpi
+> pip install tensorflow==1.14
+> pip install stable-baselines
+
+
+	
+
