@@ -17,7 +17,7 @@
 
 import numpy as np
 
-def saccade_model(t, eta=600.0, c=6.0, amplitude=9.5, t0=0.0, s0=0.0):
+def vel_model(t, eta=600.0, c=6.0, amplitude=9.5, t0=0.0, s0=0.0):
     """
     A parametric model for saccadic eye movement.
     This function simulates saccade waveforms using a parametric model.
