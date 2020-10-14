@@ -6,16 +6,11 @@ from vel_model import vel_model
 # Time axis
 Fs = 2000                               # sampling rate (samples/sec)
 t = np.arange(-0.1, 0.1+1.0/Fs, 1.0/Fs) # time axis (sec)
-
 eta_eye = 600.0                             # (degree/sec)
 # hand
 eta_hand=300.0
-
 c = 8.8                                 # (no units)
-
-# Saccade parameters
 amplitude = 10                        # (degree)
-
 
 threshold=1 # the velocity threshold (deg/s), below this is considered as 'stop moving'.
 

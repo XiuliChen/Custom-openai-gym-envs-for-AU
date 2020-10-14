@@ -1,1 +1,5 @@
 test.py
+papers/
+velocity_profiles/__pycache__/
+velocity_profiles/.DS_Store
+velocity_profiles/results/Example_3.pdf
