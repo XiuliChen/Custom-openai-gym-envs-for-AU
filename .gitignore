@@ -4,3 +4,8 @@ velocity_profiles/__pycache__/
 velocity_profiles/.DS_Store
 velocity_profiles/results/
 envs/__pycache__/vel_model.cpython-37.pyc
+envs/__pycache__/gaze.cpython-37.pyc
+.DS_Store
+envs/gaze_multiple_steps_per_fixation.py
+envs/gaze_plot.py
+#git rm --cached <file>

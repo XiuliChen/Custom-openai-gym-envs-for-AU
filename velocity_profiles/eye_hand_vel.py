@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from vel_model import vel_model
 
 # Time axis
-Fs = 1000                             # sampling rate (samples/sec)
+Fs = 200                             # sampling rate (samples/sec)
 t = np.arange(-0.1, 0.1+1.0/Fs, 1.0/Fs) # time axis (sec)
 eta_eye = 600.0                             # (degree/sec)
 # hand
@@ -57,3 +57,4 @@ for eta in [eta_eye,eta_hand]:
 	plt.legend(['eye','hand'])
 
 plt.show()
+plt.savefig('eye_hand_vel_profile')
