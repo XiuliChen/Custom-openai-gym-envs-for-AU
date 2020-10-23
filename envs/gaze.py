@@ -3,7 +3,8 @@ import numpy as np
 import gym
 from gym import spaces
 import math
-from vel_model import _vel_profile
+from envs.vel_model import _vel_profile
+import matplotlib.pyplot as plt
 
 ###########################################################
 def _calc_dis(p,q):
@@ -16,7 +17,7 @@ def _calc_dis(p,q):
 
 
 class Gaze(gym.Env):
-  def __init__(self,fitts_W = 0.05, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1):
+  def __init__(self,fitts_W = 0.2, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1):
     super(Gaze,self).__init__()
 
     # task setting
@@ -24,21 +25,25 @@ class Gaze(gym.Env):
 
     self.fitts_W=fitts_W
     self.fitts_D=fitts_D
+
     # agent ocular motor noise and visual spatial noise
     self.ocular_std=ocular_std
     self.swapping_std=swapping_std
     self.motor_std=motor_std
 
-    self.time_step=int(50) # the time step for the controller (unit ms)
+    self.time_step=int(100) # the time step for the controller (unit ms)
+    
     # timings (unit: self.time_step)
     self.time_prep_eye=self.time_step*2
     self.time_prep_hand=self.time_step*2
     self.time_fixation=self.time_step*2
 
-    self.max_steps=20
+    self.max_steps=1000
+    self.plot_target=False
 
     # action space and observation space
     self.action_space = spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
+    self.observation_space = spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
 
   def reset(self):
     # STEP1:  initialize the state
@@ -81,10 +86,10 @@ class Gaze(gym.Env):
     self.belief_full[0:2]=self.belief
     '''
 
-    print(f'target_pos={self.target_pos}')
-    print(f'inital belief={self.belief}')
 
     self.n_steps=0
+    self.fix_step=0
+    self.prep_eye=0
 
     self.PREP=False
     self.START_MOVE=False
@@ -101,10 +106,12 @@ class Gaze(gym.Env):
     self.n_steps+=1
     self._state_transit(action)
 
+
     # check if the eye is within the target region
-    dis_to_target=_calc_dis(self.target_pos, self.fixate)
+    dis_to_target=_calc_dis(self.target_pos, self.pos_eye)
 
     if  dis_to_target < self.fitts_W/2:
+      print('xxxx')
       done = True
       reward = 0
     else:
@@ -117,6 +124,33 @@ class Gaze(gym.Env):
 
     info={}
     return self.belief, reward, done, info
+
+  def plot(self):
+    if self.n_steps>1:
+      plt.plot(self.moving_to_eye[0],self.moving_to_eye[1],'k+',markersize=12)
+      if self.plot_target==False:
+        plt.plot(self.target_pos[0],self.target_pos[1],'ko',markersize=30,markerfacecolor='w')
+        self.plot_target=True
+      nn=0.7
+      plt.xlim(-nn,nn)
+      plt.ylim(-nn,nn)
+      
+
+      
+      if self.PREP:
+        size=self.prep_eye/self.time_prep_eye
+        plt.plot(self.pos_eye[0],self.pos_eye[1],'o', markersize=size*15,color='r',markerfacecolor='w')
+        
+        
+      elif self.MOV:
+        plt.plot(self.pos_eye[0],self.pos_eye[1],'>', markersize=7,color='g')
+      elif self.FIX:
+        size=self.fix_step/self.time_fixation
+        plt.plot(self.pos_eye[0],self.pos_eye[1],'+', markersize=size*25,color='b')
+
+      plt.pause(0.3)  # pause for plots to update
+
+
 
  
 
@@ -152,7 +186,6 @@ class Gaze(gym.Env):
     if eye_move_amp>0.005:
       # new eye command
       self.moving_to_eye=action[0:2]
-      print(f'New eye target:{action[0:2]}')
       self.PREP=True
       self.prep_eye=0
       self.START_MOVE=False
@@ -160,7 +193,6 @@ class Gaze(gym.Env):
       self.FIX=False
 
     if self.PREP:
-      print(f'eye prep: {self.prep_eye} ms')
       prep_stage=np.round(self.prep_eye/self.time_prep_eye,2)
       
 
@@ -183,21 +215,10 @@ class Gaze(gym.Env):
         self.pos_e.append(self.pos_eye+r*(end_eye-self.pos_eye))
       
       self.n_move_steps=len(self.trajectory_e)
-      print(f'Start Moving to {self.end_eye}')
 
-
-
-      
       self.mov_step=0
       self.START_MOVE=False
       self.MOV=True
-
-      '''
-      print(n_move_steps)
-      print(f'start={self.pos_eye}')
-      print(f'end={end_eye}')
-      print(pos)
-      '''
     
 
     if self.MOV:
@@ -218,41 +239,23 @@ class Gaze(gym.Env):
       
 
     if self.FIX:
-      print(f'Fixating: {self.fix_step} ms')
       self.fix_step+=self.time_step
 
       if self.fix_step>self.time_fixation:
-        print('Info Extract!')
         self.fixate=self.end_eye
         self.FIX=False
         self.obs,self.obs_uncertainty=self._get_obs()
         self.belief,self.belief_uncertainty=self._get_belief()
-        print(f'self.belief={self.belief}')
-        # update belief
-
-
-
-
-
-
-
-
 
 if __name__=="__main__":
   env=Gaze()
   obs=env.reset()
   action=env.action_space.sample()
 
-  for i in range(20):
-    print('--------------------------------------')
-    print(f'step={i}, time:{(i-1)*50}ms--{(i)*50}ms')
+  for i in range(100):
     observation, reward, done, info = env.step(action)
     action=observation
-    print(f'observation, reward, done={observation}, {reward}, {done}')
-    print(f'eye pos={env.pos_eye}')
-
-
-
+    env.plot()
 
     if done:
       break
