@@ -33,9 +33,9 @@ class EyeHandEnv(gym.Env):
     self.EYE=0
     self.HAND=1
 
-
     # task setting
-    # 1.0 in the canvas equals to 20 degress (this is used to calculate the velocity profile)
+    # 1.0 in the canvas equals to 20 degress 
+    # This is used to calculate the velocity profile
     self.scale_deg=20 
 
     self.fitts_W=fitts_W
@@ -51,7 +51,7 @@ class EyeHandEnv(gym.Env):
     self.time_step=int(20) # the time step for the controller (unit ms)
 
     # one for the eye and one for the hand
-    self.prep_duration=[self.time_step, self.time_step]
+    self.prep_duration=[self.time_step, self.time_step*3]
     self.fixation_duration=[self.time_step,self.time_step]
 
     self.max_steps=2000
@@ -63,20 +63,22 @@ class EyeHandEnv(gym.Env):
     self.action_coords,self.n_coords=discretised_action()
     self.action_space = spaces.Discrete(self.n_coords+1)
     '''
-    self.action_space = spaces.Discrete(3) #= spaces.MultiBinary(2)
+    self.action_space = spaces.Discrete(3)
 
-    # belief 
-    low_b=np.array([-1.0, -1.0,
-      -1.0, -1.0,
-      0,0,0,
-      -1.0, -1.0,
-      0,0,0],dtype=np.float32)
+    # belief/state
+    low_b=np.array([-1.0, -1.0, # target_pos
+      -1.0, -1.0, # moving to_eye
+      0, # velocity_eye
+      -1.0, -1.0, # moving to_hand
+      0], # velocity_hand
+      dtype=np.float32)
     
-    high_b=np.array([1.0, 1.0,
-      1.0, 1.0,
-      1,1,1,
-      1.0, 1.0,
-      1,1,1],dtype=np.float32)
+    high_b=np.array([1.0, 1.0, # target_pos
+      1.0, 1.0, # moving to_eye
+      1, # velocity_eye
+      1.0, 1.0,# moving to_hand
+      1], # velocity_hand
+      dtype=np.float32)
 
 
     self.observation_space = spaces.Box(low=low_b, high=high_b, dtype=np.float32)
@@ -181,9 +183,7 @@ class EyeHandEnv(gym.Env):
 ################################
   def _get_status(self,mode):
     status=np.concatenate((self.moving_to[mode],
-                            self.vel[mode], 
-                            self.prep_step[mode]/self.prep_duration[mode],
-                            self.fixate_step[mode]/self.fixation_duration[mode]),axis=None)
+                            self.vel[mode]),axis=None)
 
     return status
 
@@ -279,6 +279,7 @@ class EyeHandEnv(gym.Env):
       self.START_MOVE[mode]=False
       self.mov_step[mode]=0
       self.MOV[mode]=True
+      self.vel=[0.0,0.0]
 
     
 
@@ -315,116 +316,64 @@ class EyeHandEnv(gym.Env):
     
 
     dis_to_target_eye=_calc_dis(self.target_pos,self.pos[mode])
+
+    move_to=_calc_dis([0,0],self.moving_to[mode])
+    
+
     if self.PREP[mode]:
       size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_eye,'ko',markerfacecolor='w',markersize=size*10)
+      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'ko',markerfacecolor='w',markersize=size*10,label='prep')
+      plt.plot(self.n_steps*self.time_step,0.5-move_to,'k*')
     elif self.FIX[mode]:
       size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_eye,'k+',markersize=size*10)
+      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'k+',markersize=size*10,label='fixate')
     elif self.MOV[mode]:
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_eye,'k>')
+      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'k>',label='eye')
     else:
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_eye,'kx')
+      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'kx',label='no-op')
 
 
 
     mode=self.HAND
     dis_to_target_hand=_calc_dis(self.target_pos,self.pos[mode])
+    move_to=_calc_dis([0,0],self.moving_to[mode])
+    
     if self.PREP[mode]:
       size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_hand,'ro',markerfacecolor='w',markersize=size*10)
+      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'ro',markerfacecolor='w',markersize=size*10)
+      plt.plot(self.n_steps*self.time_step,0.5-move_to,'r*')
     elif self.FIX[mode]:
       size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_hand,'r+',markersize=size*10)
+      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'r+',markersize=size*10)
     elif self.MOV[mode]:
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_hand,'r>')
+      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'r>')
     else:
-      plt.plot(self.n_steps*self.time_step,0.5-dis_to_target_hand,'rx')
+      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'rx')
 
-
-
-
-    
-
-    plt.plot(self.n_steps*self.time_step,0.5,'g*')
-    plt.pause(0.2)
-
-        
-
-  def plot1(self):
-
-
-    plt.subplot(1,2,1)
-    mode=self.EYE
-
-    plt.plot(self.moving_to[mode][0],self.moving_to[mode][1],'k+',markersize=12)
-    if self.plot_target==False:
-      plt.plot(self.target_pos[0],self.target_pos[1],'ko',markersize=30,markerfacecolor='w')
-
-
-    
-
-    
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'o', markersize=size*15,color='r',markerfacecolor='w')
-      
-      
-    elif self.MOV[mode]:
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'>', markersize=7,color='g')
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'+', markersize=size*25,color='b')
-
-  
-    plt.title('EYE')
-
-    plt.subplot(1,2,2)
-    mode=self.HAND
-
-    plt.plot(self.moving_to[mode][0],self.moving_to[mode][1],'k+',markersize=12)
-    if self.plot_target==False:
-      plt.plot(self.target_pos[0],self.target_pos[1],'ko',markersize=30,markerfacecolor='w')
-      self.plot_target=True
-
-    
-
-    
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'o', markersize=size*15,color='r',markerfacecolor='w')
-      
-      
-    elif self.MOV[mode]:
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'>', markersize=7,color='g')
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'+', markersize=size*25,color='b')
-
-    
-    plt.title('HAND')
-    plt.pause(0.2)  # pause for plots to update
 
   def plot(self):
     if self.plot_target==False:
-      self.prev=[0,0]
-      plt.plot(self.target_pos[0],self.target_pos[1],'ko',markersize=30,markerfacecolor='w')
+      self.prev=[0.0,0.0]
+      plt.plot(self.target_pos[0],self.target_pos[1],'wo',markersize=40,markerfacecolor='grey')
       self.plot_target=True
 
     mode=self.EYE
 
     plt.plot(self.moving_to[mode][0],self.moving_to[mode][1],'k+',markersize=12)
-    
+    '''
 
     if self.PREP[mode]:
       size=self.prep_step[mode]/self.prep_duration[mode]
       plt.plot(self.pos[mode][0],self.pos[mode][1],'o', markersize=size*15,color='k',markerfacecolor='w')
+    '''
       
       
-    elif self.MOV[mode]:
-      x=[self.prev[0],self.pos[mode][0]]
-      y=[self.prev[1],self.pos[mode][1]]
-      plt.plot(x,y,'k>:', markersize=7)
+    if self.MOV[mode]:
+      x=np.array([self.prev[0],self.pos[mode][0]])
+      y=np.array([self.prev[1],self.pos[mode][1]])
+      plt.plot(x, y,'k--')
+      plt.show()
+      xxxx
 
       self.prev=self.pos[mode]
 
@@ -443,20 +392,11 @@ class EyeHandEnv(gym.Env):
       
     elif self.MOV[mode]:
       plt.plot(self.pos[mode][0],self.pos[mode][1],'d', markersize=7,color='r')
-    
+    '''
     elif self.FIX[mode]:
       size=self.fixate_step[mode]/self.fixation_duration[mode]
       plt.plot(self.pos[mode][0],self.pos[mode][1],'*', markersize=size*25,color='r')
-    nn=0.3
-    if self.target_pos[0]>0:
-      plt.xlim([-0.1,nn+self.target_pos[0]])
-    elif self.target_pos[0]<0:
-      plt.xlim([self.target_pos[0]-nn,0.1])
-
-    if self.target_pos[1]>0:
-      plt.ylim([-0.1,nn+self.target_pos[1]])
-    elif self.target_pos[1]<0:
-      plt.ylim([self.target_pos[1]-nn,0.1])
+    '''
 
     plt.pause(0.2)  # pause for plots to update
 
