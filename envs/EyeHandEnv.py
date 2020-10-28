@@ -176,7 +176,23 @@ class EyeHandEnv(gym.Env):
     if self.n_steps>self.max_steps:
       done=True
 
-    info={}
+
+    nn=2
+    info={'step': np.round(self.n_steps, nn),
+    'target_pos':np.round(self.target_pos,nn),
+      'aim_eye': np.round(self.moving_to[0],nn),
+      'PREP_eye':self.PREP[0],
+      'MOV_eye':self.MOV[0],
+      'FIX_eye':self.FIX[0],
+      'pos_eye':np.round(self.pos[0],nn),
+      'aim_hand': np.round(self.moving_to[1],nn),
+      'PREP_hand':self.PREP[1],
+      'MOV_hand':self.MOV[1],
+      'FIX_hand':self.FIX[1],
+      'pos_hand':np.round(self.pos[1],nn),
+      }
+
+
     return self.belief_full, reward, done, info
   
 
@@ -311,94 +327,6 @@ class EyeHandEnv(gym.Env):
           self.obs,self.obs_uncertainty=self._get_obs()
           self.belief,self.belief_uncertainty=self._get_belief()
 
-  def plot_1d(self):
-    mode=self.EYE
-    
-
-    dis_to_target_eye=_calc_dis(self.target_pos,self.pos[mode])
-
-    move_to=_calc_dis([0,0],self.moving_to[mode])
-    
-
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'ko',markerfacecolor='w',markersize=size*10,label='prep')
-      plt.plot(self.n_steps*self.time_step,0.5-move_to,'k*')
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'k+',markersize=size*10,label='fixate')
-    elif self.MOV[mode]:
-      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'k>',label='eye')
-    else:
-      plt.plot(self.n_steps*self.time_step,dis_to_target_eye,'kx',label='no-op')
-
-
-
-    mode=self.HAND
-    dis_to_target_hand=_calc_dis(self.target_pos,self.pos[mode])
-    move_to=_calc_dis([0,0],self.moving_to[mode])
-    
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'ro',markerfacecolor='w',markersize=size*10)
-      plt.plot(self.n_steps*self.time_step,0.5-move_to,'r*')
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'r+',markersize=size*10)
-    elif self.MOV[mode]:
-      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'r>')
-    else:
-      plt.plot(self.n_steps*self.time_step,dis_to_target_hand,'rx')
-
-
-  def plot(self):
-    if self.plot_target==False:
-      self.prev=[0.0,0.0]
-      plt.plot(self.target_pos[0],self.target_pos[1],'wo',markersize=40,markerfacecolor='grey')
-      self.plot_target=True
-
-    mode=self.EYE
-
-    plt.plot(self.moving_to[mode][0],self.moving_to[mode][1],'k+',markersize=12)
-    '''
-
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'o', markersize=size*15,color='k',markerfacecolor='w')
-    '''
-      
-      
-    if self.MOV[mode]:
-      x=np.array([self.prev[0],self.pos[mode][0]])
-      y=np.array([self.prev[1],self.pos[mode][1]])
-      plt.plot(x, y,'k--')
-      plt.show()
-      xxxx
-
-      self.prev=self.pos[mode]
-
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'*', markersize=size*25,color='k')
-
-  
-    mode=self.HAND
-    plt.plot(self.moving_to[mode][0],self.moving_to[mode][1],'r+',markersize=12)
-
-    if self.PREP[mode]:
-      size=self.prep_step[mode]/self.prep_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'o', markersize=size*15,color='r',markerfacecolor='w')
-      
-      
-    elif self.MOV[mode]:
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'d', markersize=7,color='r')
-    '''
-    elif self.FIX[mode]:
-      size=self.fixate_step[mode]/self.fixation_duration[mode]
-      plt.plot(self.pos[mode][0],self.pos[mode][1],'*', markersize=size*25,color='r')
-    '''
-
-    plt.pause(0.2)  # pause for plots to update
 
 
 
