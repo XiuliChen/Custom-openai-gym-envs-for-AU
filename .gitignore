@@ -11,5 +11,7 @@ envs/gaze_plot.py
 envs/__pycache__/
 tmp/
 one_fix_two_hands/
+AU/
+
 
 #git rm --cached <file>
