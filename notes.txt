@@ -1,10 +1,9 @@
 
-> mkvirtualenv AUXC
+python3 -m venv AU
+source AU/bin/activate
 
-> brew install cmake openmpi
-> pip install tensorflow==1.14
-> pip install stable-baselines
 
+pip3 install numpy
 
 	
 

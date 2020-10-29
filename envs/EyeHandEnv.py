@@ -27,7 +27,7 @@ def _calc_dis(p,q):
 
 class EyeHandEnv(gym.Env):
 
-  def __init__(self,fitts_W = 0.2, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1):
+  def __init__(self,fitts_W = 0.1, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1):
     super(EyeHandEnv,self).__init__()
 
     self.EYE=0
@@ -166,7 +166,6 @@ class EyeHandEnv(gym.Env):
 
 
     if  dis_to_target < self.fitts_W/2:
-      print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
       done = True
       reward = 0
     else:

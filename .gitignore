@@ -8,7 +8,8 @@ envs/__pycache__/gaze.cpython-37.pyc
 .DS_Store
 envs/gaze_multiple_steps_per_fixation.py
 envs/gaze_plot.py
-
+envs/__pycache__/
+tmp/
 one_fix_two_hands/
 
 #git rm --cached <file>
