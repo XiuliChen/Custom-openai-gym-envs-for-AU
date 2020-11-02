@@ -13,6 +13,8 @@ tmp/
 one_fix_two_hands/
 AU/
 logs/
+tmp/
+git_figs_dis/
 
 
 #git rm --cached <file>

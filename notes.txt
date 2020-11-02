@@ -1,9 +1,10 @@
 
 python3 -m venv AU
+cd Custom-openai-gym-envs-for-AU
 source AU/bin/activate
 
 
-pip3 install numpy
+
 
 	
 
