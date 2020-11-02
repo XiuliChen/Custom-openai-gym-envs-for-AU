@@ -12,6 +12,7 @@ envs/__pycache__/
 tmp/
 one_fix_two_hands/
 AU/
+logs/
 
 
 #git rm --cached <file>
