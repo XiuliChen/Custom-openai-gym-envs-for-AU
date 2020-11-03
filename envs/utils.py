@@ -20,10 +20,10 @@ def get_new_target(D):
     return np.array([x_target,y_target])
 ###########################################################
 
-def get_trajectory(mode,amp,current_pos,actual_pos,time_step):
+def get_trajectory(mode_eta,amp,current_pos,actual_pos,time_step):
     
     # calculate the moving distance
-    trajectory,velocity=_vel_profiles(amp,mode,time_step)
+    trajectory,velocity=_vel_profiles(amp,mode_eta,time_step)
     pos=[]
     pos.append(current_pos)
     for r in (trajectory/amp):
@@ -33,15 +33,12 @@ def get_trajectory(mode,amp,current_pos,actual_pos,time_step):
 
     return pos
 
-def _vel_profiles(amplitude,hand_or_eye,time_step):
+def _vel_profiles(amplitude,mode_eta,time_step):
     # Time axis
     Fs = 1000/time_step                            # sampling rate (samples/sec)
     t = np.arange(-0.1, 0.1+1.0/Fs, 1.0/Fs) # time axis (sec)
 
-    if hand_or_eye==0:
-      eta= 600.0                             # (degree/sec)
-    else:
-      eta=300.0
+    eta= mode_eta                             # (degree/sec)
 
     c = 8.8                                 # (no units)
     threshold=1 # the velocity threshold (deg/s), below this is considered as 'stop moving'.

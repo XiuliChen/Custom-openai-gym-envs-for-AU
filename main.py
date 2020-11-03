@@ -28,6 +28,7 @@ def moving_average(values, window):
     Smooth values by doing a moving average
     :param values: (numpy array)
     :param window: (int)
+    
     :return: (numpy array)
     """
     weights = np.repeat(1.0, window) / window
@@ -50,21 +51,35 @@ def plot_results2(log_folder, title='Learning Curve'):
     plt.plot(x, y)
     plt.xlabel('Number of Timesteps')
     plt.ylabel('Rewards')
-    plt.title(title + " Smoothed")
+    plt.title(f'last average (window=100)= {np.round(y[-1],3)}')
     #plt.show()
+fitts_D=0.5
+ocular_std=0.1 
+motor_std=0.1
+
+eta_eye=600
+eta_hand=300
 
 PREP,MOV,FIX=-1,0.5,1
-timesteps = 2e6
+timesteps = 2e4
 save_feq_n=timesteps/10
-for run in range(5):
-    for swapping_std in [0.2,0.1]:
-        for fitts_W in [0.3,0.05,0.2,0.1]:       
-            # Create log dir
-            log_dir = f"./logs/w{fitts_W*100}timesteps{int(timesteps)}swapping_std{swapping_std}run{run}/"
+for swapping_std in [0.25,0.2,0.1]:
+    for fitts_W in [0.025,0.05,0.1,0.3]:
+        for run in range(3):       
+        # Create log dir
+            log_dir = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}/run{run}/'
+            log_dir2 = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}/'
             os.makedirs(log_dir, exist_ok=True)
             TRAIN=True
             # Instantiate the env
-            env = EyeHandEnv(fitts_W = fitts_W, fitts_D=0.5, ocular_std=0.1, swapping_std=swapping_std, motor_std=0.1)
+            env = EyeHandEnv(fitts_W = fitts_W, 
+                fitts_D=fitts_D, 
+                ocular_std=ocular_std, 
+                swapping_std=swapping_std, 
+                motor_std=motor_std,
+                eta_eye=eta_eye,
+                eta_hand=eta_hand)
+
             env = Monitor(env, log_dir)
 
             # Train the agent
@@ -79,7 +94,7 @@ for run in range(5):
             model.learn(total_timesteps=int(timesteps), callback=checkpoint_callback)
 
             plot_results2(log_dir)
-            plt.savefig(log_dir+'learning_curve.png')
+            plt.savefig(f'{log_dir2}learning_curve{run}.png')
             plt.close('all') 
 
             print('Done training!!!!')
@@ -106,6 +121,7 @@ for run in range(5):
 
                     obs = env.reset()
                     for step in range(n_steps):
+                        # deterministic = True
 
                         action, _ = model.predict(obs)
                         obs, reward, done, info = env.step(action)
@@ -149,7 +165,7 @@ for run in range(5):
 
 #############################################################################################
             
-            print('Making Gif!!!!')
+            print('Plotting!!!!')
             #my_data = genfromtxt(f'{log_dir}steps_data.csv', delimiter=',')
             my_data=learned_behav_data
             episodes=np.unique(my_data[:,-1])
@@ -163,57 +179,61 @@ for run in range(5):
                 data_episode=my_data[data,:]
                 n_steps=len(data_episode)
 
-                
 
                 for step in range(n_steps):
                     target_pos=data_episode[step,1:3]
                     eye_stage=data_episode[step,5:6]
                     eye_pos=data_episode[step,6:8]
-                    
+
                     hand_stage=data_episode[step,10:11]
                     hand_pos=data_episode[step,11:13]
 
                     dis_eye=calc_dis(target_pos,eye_pos)
                     dis_hand=calc_dis(target_pos,hand_pos)
-
+                    s=12
                     if step==0:
                         #Eye
-                        plt.plot(-5,0.5,'ko',markersize=15,label='Eye Prep')
-                        plt.plot(-5,0.5,'k<',label='Eye Moving')
-                        plt.plot(0,0.5,'k+',markersize=15,label='Eye Fixate')
+                        plt.plot(-50,0.5,'ko',markersize=s,label='Eye Prep')
+                        plt.plot(-50,0.5,'k<',label='Eye Moving')
+                        plt.plot(0,0.5,'k*',markersize=s,label='Eye Fixate')
                         #Eye
-                        plt.plot(-5,0.5,'ro',markersize=15,label='Hand Prep')
-                        plt.plot(-5,0.5,'r<',label='Hand Moving')
-                        plt.plot(0,0.5,'r+',markersize=15,label='Hand Fixate')
+                        plt.plot(-50,0.5,'ro',markersize=s,label='Hand Prep')
+                        plt.plot(-50,0.5,'r<',label='Hand Moving')
+                        plt.plot(0,0.5,'r*',markersize=s,label='Hand Fixate')
                         #Eye
-                        plt.plot(-5,0.5,'gs',markersize=15,label='None')
+                        plt.plot(-50,0.5,'ks',markersize=s,label='Eye None',markerfacecolor='w')
+                        plt.plot(-50,0.5,'rs',markersize=s,label='Hand None',markerfacecolor='w')
 
-                    t=step+1
+                    time_step=20#ms
+                    t=(step+1)*time_step
 
                     if eye_stage==PREP:
-                        plt.plot(t,dis_eye,'ko',markersize=15,)
+                        plt.plot(t,dis_eye,'ko',markersize=s,)
                     elif eye_stage==MOV:
                         plt.plot(t,dis_eye,'k<')
                     elif eye_stage==FIX:
-                        plt.plot(t,dis_eye,'k+',markersize=15,)
+                        plt.plot(t,dis_eye,'k*',markersize=s,)
                     else:
-                        plt.plot(t,dis_eye,'gs')
+                        plt.plot(t,dis_hand,'ks',markerfacecolor='w')
 
 
                     if hand_stage==PREP:
-                        plt.plot(t+0.1,dis_hand,'ro',markersize=15,)
+                        plt.plot(t+0.1,dis_hand,'ro',markersize=s,)
                     elif hand_stage==MOV:
                         plt.plot(t+0.1,dis_hand,'r<')
                     elif hand_stage==FIX:
-                        plt.plot(t+0.1,dis_hand,'r+',markersize=15,)
+                        plt.plot(t+0.1,dis_hand,'r*',markersize=s,)
                     else:
-                        plt.plot(t+0.1,dis_hand,'gs')
-
-                plt.xlim(-1,n_steps+3)
+                        plt.plot(t+0.1,dis_hand,'rs',markerfacecolor='w')
+                plt.hlines(fitts_W/2,-time_step*2,(n_steps+3)*time_step,colors='g',linestyles='--',label='Target region')
+                plt.hlines(-fitts_W/2,-time_step*2,(n_steps+3)*time_step,colors='g',linestyles='--')
+                plt.xlim(-time_step*2,(n_steps+3)*time_step)
                 plt.ylim(-0.1,0.6)
+                plt.xlabel('time (ms)')
                 plt.ylabel('Distance to target')
-                plt.legend(loc='lower left')
-
+                plt.legend(loc='upper right')
+                plt.title(log_dir)
+                plt.grid()
                 plt.savefig(f'{save_path}/eps{e}.png')
                 '''
                 # filepaths

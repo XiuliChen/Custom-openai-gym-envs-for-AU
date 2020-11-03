@@ -11,7 +11,7 @@ import itertools
 
 
 class EyeHandEnv(gym.Env):
-  def __init__(self, fitts_W = 0.1, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1):
+  def __init__(self, fitts_W = 0.1, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1,eta_eye=600,eta_hand=300):
     super(EyeHandEnv,self).__init__()
 
     # define the constants
@@ -29,6 +29,7 @@ class EyeHandEnv(gym.Env):
     self.swapping_std=swapping_std
     # agent ocular and motor noise 
     self.motor_noise_params=np.array([ocular_std,motor_std])
+    self.eta=np.array([eta_eye,eta_hand])
 
 
     # timings (unit: self.time_step)
@@ -95,8 +96,8 @@ class EyeHandEnv(gym.Env):
     self.n_steps+=1
     self.chosen_action=self.actions[a]
 
-    self._state_transit(self.chosen_action[self.EYE],self.EYE)
-    self._state_transit(self.chosen_action[self.HAND],self.HAND)
+    self._state_transit(self.chosen_action[self.EYE],self.eta[self.EYE],self.EYE)
+    self._state_transit(self.chosen_action[self.HAND],self.eta[self.HAND],self.HAND)
 
 
     self._get_state_observation()
@@ -162,7 +163,7 @@ class EyeHandEnv(gym.Env):
 
     return belief, belief_uncertainty
 
-  def _state_transit(self,action,mode):
+  def _state_transit(self,action,eta,mode):
 
     if action==1: 
       # new command
@@ -186,7 +187,7 @@ class EyeHandEnv(gym.Env):
 
         amp=calc_dis(self.current_pos[mode],actual_pos)*self.scale_deg
 
-        pos=get_trajectory(mode,amp,self.current_pos[mode],actual_pos,self.time_step) 
+        pos=get_trajectory(eta,amp,self.current_pos[mode],actual_pos,self.time_step) 
         self.n_move_steps[mode]=len(pos)
         
 
@@ -232,7 +233,7 @@ class EyeHandEnv(gym.Env):
 
 
   def _save_data(self):
-    nn=2
+    nn=4
     info={'step': np.round(self.n_steps, nn),
     'target_pos':np.round(self.target_pos,nn),
     'aim_eye': np.round(self.aim_at[0],nn),
