@@ -15,6 +15,10 @@ AU/
 logs/
 tmp/
 gif_figs_dis/
+logs2/
+logs3/
+plot_figures/
+save_data.py
 
 
 #git rm --cached <file>
