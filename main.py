@@ -58,17 +58,18 @@ ocular_std=0.1
 motor_std=0.1
 
 eta_eye=600
-eta_hand=300
+eta_hand=200
+scale_deg=20
 
 PREP,MOV,FIX=-1,0.5,1
-timesteps = 2e4
+timesteps = 3e6
 save_feq_n=timesteps/10
-for swapping_std in [0.25,0.2,0.1]:
-    for fitts_W in [0.025,0.05,0.1,0.3]:
-        for run in range(3):       
+for swapping_std in [0.1,0.2]:
+    for fitts_W in [0.1,0.05,0.3]:
+        for run in range(2):       
         # Create log dir
-            log_dir = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}/run{run}/'
-            log_dir2 = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}/'
+            log_dir = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/run{run}/'
+            log_dir2 = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/'
             os.makedirs(log_dir, exist_ok=True)
             TRAIN=True
             # Instantiate the env
@@ -78,7 +79,8 @@ for swapping_std in [0.25,0.2,0.1]:
                 swapping_std=swapping_std, 
                 motor_std=motor_std,
                 eta_eye=eta_eye,
-                eta_hand=eta_hand)
+                eta_hand=eta_hand,
+                scale_deg=scale_deg)
 
             env = Monitor(env, log_dir)
 
@@ -108,7 +110,7 @@ for swapping_std in [0.25,0.2,0.1]:
 
             # for saving the data
             NN=10000
-            learned_behav_data=np.ndarray(shape=(NN,14), dtype=np.float32)
+            learned_behav_data=np.ndarray(shape=(NN,16), dtype=np.float32)
             row=0
             eps=0
             
@@ -142,6 +144,8 @@ for swapping_std in [0.25,0.2,0.1]:
                             info['stage_hand'],#10
                             info['pos_hand'][0],#11
                             info['pos_hand'][1],#12
+                            info['vel_eye'],#13
+                            info['vel_hand'],#14
                             eps]
 
            
@@ -214,7 +218,7 @@ for swapping_std in [0.25,0.2,0.1]:
                     elif eye_stage==FIX:
                         plt.plot(t,dis_eye,'k*',markersize=s,)
                     else:
-                        plt.plot(t,dis_hand,'ks',markerfacecolor='w')
+                        plt.plot(t,dis_eye,'ks',markerfacecolor='w')
 
 
                     if hand_stage==PREP:

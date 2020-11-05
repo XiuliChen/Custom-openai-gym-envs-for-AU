@@ -31,7 +31,7 @@ def get_trajectory(mode_eta,amp,current_pos,actual_pos,time_step):
     pos.append(actual_pos)
     velocity=[0,*velocity,0]
 
-    return pos
+    return pos, velocity
 
 def _vel_profiles(amplitude,mode_eta,time_step):
     # Time axis
@@ -145,7 +145,7 @@ if __name__=="__main__":
     amp=calc_dis(current_pos,actual_pos)*20
     time_step=20
 
-    pos,velocity=_get_trajectory(mode,amp,current_pos,actual_pos,time_step)
+    pos,velocity=get_trajectory(mode,amp,current_pos,actual_pos,time_step)
     plt.plot(current_pos[0],current_pos[1],'g>',markersize=15)
     plt.plot(actual_pos[0],actual_pos[1],'rs',markersize=15)
     print(pos)
@@ -154,7 +154,17 @@ if __name__=="__main__":
     plt.xlim([-1,1])
     plt.ylim([-0.1,1])
 
-    plt.show()
+    
+    plt.figure()
+    tra,vel1=_vel_profiles(9,550,1)
+    plt.plot(vel1,'k.',label='eye')
+    tra,vel2=_vel_profiles(29,150,1)
+    plt.plot(vel2,'r.',label='hand')
+    plt.legend()
+    plt.grid()
+    plt.yticks(np.arange(0,700,50))
+
+    plt.savefig(f'vel.png')
 
 
 
