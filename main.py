@@ -59,17 +59,18 @@ motor_std=0.1
 
 eta_eye=600
 eta_hand=200
-scale_deg=20
+scale_deg=40
+time_step=20
 
 PREP,MOV,FIX=-1,0.5,1
 timesteps = 3e6
 save_feq_n=timesteps/10
 for swapping_std in [0.1,0.2]:
     for fitts_W in [0.1,0.05,0.3]:
-        for run in range(2):       
+        for run in range(3):       
         # Create log dir
-            log_dir = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/run{run}/'
-            log_dir2 = f'./logs3/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/'
+            log_dir = f'./logs6/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/run{run}/'
+            log_dir2 = f'./logs6/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/'
             os.makedirs(log_dir, exist_ok=True)
             TRAIN=True
             # Instantiate the env
@@ -109,7 +110,7 @@ for swapping_std in [0.1,0.2]:
             
 
             # for saving the data
-            NN=10000
+            NN=20000
             learned_behav_data=np.ndarray(shape=(NN,16), dtype=np.float32)
             row=0
             eps=0
@@ -173,15 +174,36 @@ for swapping_std in [0.1,0.2]:
             #my_data = genfromtxt(f'{log_dir}steps_data.csv', delimiter=',')
             my_data=learned_behav_data
             episodes=np.unique(my_data[:,-1])
+
+            #plot the steps count
+            n_steps_all=[]
+            for e in episodes:
+                data=my_data[:,-1]==e
+                data_episode=my_data[data,:]
+                n_steps=len(data_episode)
+                n_steps_all.append(n_steps*time_step)
+
+            plt.figure()
+            plt.subplot(1,2,1)
+            plt.hist(n_steps_all)
+            plt.xlabel('Completion time (ms)')
+            plt.subplot(1,2,2)
+            plt.boxplot(n_steps_all)
+            plt.ylabel('Completion time (ms)')
+            plt.title(f'mean={np.round(np.mean(n_steps_all),2)} \n median={np.round(np.median(n_steps_all))}')
+            plt.savefig(f'{log_dir2}/num_steps{run}.png')
+
+            # plot each step
             for e in range(1,20):
                 save_path=f'{log_dir}/plots/'
                 os.makedirs(save_path, exist_ok=True)
 
                 plt.close('all')
-                plt.figure(figsize=(7,7))
+                plt.figure(figsize=(8,8))
                 data=my_data[:,-1]==e
                 data_episode=my_data[data,:]
                 n_steps=len(data_episode)
+
 
 
                 for step in range(n_steps):
@@ -192,21 +214,25 @@ for swapping_std in [0.1,0.2]:
                     hand_stage=data_episode[step,10:11]
                     hand_pos=data_episode[step,11:13]
 
-                    dis_eye=calc_dis(target_pos,eye_pos)
-                    dis_hand=calc_dis(target_pos,hand_pos)
-                    s=12
+                    dis_eye=0.5-calc_dis(target_pos,eye_pos)
+                    dis_hand=0.5-calc_dis(target_pos,hand_pos)
+                    s=14
+                    ss=10
+                    
+
+
                     if step==0:
                         #Eye
-                        plt.plot(-50,0.5,'ko',markersize=s,label='Eye Prep')
-                        plt.plot(-50,0.5,'k<',label='Eye Moving')
-                        plt.plot(0,0.5,'k*',markersize=s,label='Eye Fixate')
+                        plt.plot(-50,0,'ko',markersize=s,label='Eye Prep')
+                        plt.plot(-50,0,'k<',label='Eye Moving',markersize=ss)
+                        plt.plot(0,0,'k*',markersize=s,label='Eye Fixate')
                         #Eye
-                        plt.plot(-50,0.5,'ro',markersize=s,label='Hand Prep')
-                        plt.plot(-50,0.5,'r<',label='Hand Moving')
-                        plt.plot(0,0.5,'r*',markersize=s,label='Hand Fixate')
+                        plt.plot(-50,0,'ro',markersize=s,label='Hand Prep')
+                        plt.plot(-50,0,'r<',label='Hand Moving',markersize=ss)
+                        plt.plot(5,0,'r*',markersize=s,label='Hand Fixate')
                         #Eye
-                        plt.plot(-50,0.5,'ks',markersize=s,label='Eye None',markerfacecolor='w')
-                        plt.plot(-50,0.5,'rs',markersize=s,label='Hand None',markerfacecolor='w')
+                        plt.plot(-50,0,'ks',markersize=s,label='Eye None',markerfacecolor='w')
+                        plt.plot(-50,0,'rs',markersize=s,label='Hand None',markerfacecolor='w')
 
                     time_step=20#ms
                     t=(step+1)*time_step
@@ -214,31 +240,35 @@ for swapping_std in [0.1,0.2]:
                     if eye_stage==PREP:
                         plt.plot(t,dis_eye,'ko',markersize=s,)
                     elif eye_stage==MOV:
-                        plt.plot(t,dis_eye,'k<')
+                        plt.plot(t,dis_eye,'k<',markersize=ss)
                     elif eye_stage==FIX:
                         plt.plot(t,dis_eye,'k*',markersize=s,)
                     else:
-                        plt.plot(t,dis_eye,'ks',markerfacecolor='w')
+                        plt.plot(t,dis_eye,'ks',markerfacecolor='w',markersize=ss)
 
 
                     if hand_stage==PREP:
-                        plt.plot(t+0.1,dis_hand,'ro',markersize=s,)
+                        plt.plot(t+5,dis_hand,'ro',markersize=s,)
                     elif hand_stage==MOV:
-                        plt.plot(t+0.1,dis_hand,'r<')
+                        plt.plot(t+5,dis_hand,'r<',markersize=ss)
                     elif hand_stage==FIX:
-                        plt.plot(t+0.1,dis_hand,'r*',markersize=s,)
+                        plt.plot(t+5,dis_hand,'r*',markersize=s,)
                     else:
-                        plt.plot(t+0.1,dis_hand,'rs',markerfacecolor='w')
-                plt.hlines(fitts_W/2,-time_step*2,(n_steps+3)*time_step,colors='g',linestyles='--',label='Target region')
-                plt.hlines(-fitts_W/2,-time_step*2,(n_steps+3)*time_step,colors='g',linestyles='--')
-                plt.xlim(-time_step*2,(n_steps+3)*time_step)
-                plt.ylim(-0.1,0.6)
+                        plt.plot(t+5,dis_hand,'rs',markerfacecolor='w',markersize=ss)
+
+
+                plt.hlines(0.5,-time_step*2,(n_steps+3)*time_step,colors='b',linestyles='-',label='Target center')
+                plt.hlines(-fitts_W/2+0.5,-time_step*2,(n_steps+3)*time_step,colors='g',linestyles='--',label='Target region')
+                plt.xlim(-time_step,(n_steps+3)*time_step)
+                plt.ylim(-0.02,0.6)
+                plt.xticks(np.arange(0,(n_steps+3)*time_step,time_step),rotation='vertical')
                 plt.xlabel('time (ms)')
-                plt.ylabel('Distance to target')
-                plt.legend(loc='upper right')
-                plt.title(log_dir)
+                plt.ylabel(f'start ----> target (0.5= {scale_deg/2} degree)', fontsize=18)
+                plt.legend(loc='lower right')
+                plt.title(f'Target width and distance: W={fitts_W}, D={fitts_D} (1={scale_deg} degree) \n Noise: ocular={ocular_std}, perceptual={swapping_std} \n motor={motor_std}, \n For trajectory and speed profile: eta_eye={eta_eye} eta_hand={eta_hand}   ')
                 plt.grid()
                 plt.savefig(f'{save_path}/eps{e}.png')
+
                 '''
                 # filepaths
                 fp_in = f"{save_path}/*.png"

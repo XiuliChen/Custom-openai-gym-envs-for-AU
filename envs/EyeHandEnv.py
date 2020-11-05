@@ -11,18 +11,18 @@ import itertools
 
 
 class EyeHandEnv(gym.Env):
-  def __init__(self, fitts_W = 0.1, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1,eta_eye=600,eta_hand=300):
+  def __init__(self, fitts_W = 0.1, fitts_D=0.5, ocular_std=0.1, swapping_std=0.2, motor_std=0.1,eta_eye=600,eta_hand=300,scale_deg=20):
     super(EyeHandEnv,self).__init__()
 
     # define the constants
-    self.EYE,self.HAND=0,1
+    self.EYE,self.HAND=0,1 
     self.PREP,self.MOV,self.FIX=-1,0.5,1
 
     # task setting
     # the canvas is [-1,1]
     # 1.0 in the canvas equals to 20 degress 
     # This is used to calculate the velocity profile
-    self.scale_deg=20 
+    self.scale_deg=scale_deg
     self.fitts_W=fitts_W
     self.fitts_D=fitts_D
     # agent visual spatial noise
@@ -72,6 +72,7 @@ class EyeHandEnv(gym.Env):
     self.aim_at=np.array([[.0,.0],[.0,.0]])
     # the eye and hand start position
     self.current_pos=np.array([[.0,.0],[.0,.0]])
+    self.current_vel=[0,0]
     self.fixate=np.array([[.0,.0],[.0,.0]])
 
     self.n_steps=0
@@ -187,14 +188,17 @@ class EyeHandEnv(gym.Env):
 
         amp=calc_dis(self.current_pos[mode],actual_pos)*self.scale_deg
 
-        pos=get_trajectory(eta,amp,self.current_pos[mode],actual_pos,self.time_step) 
+        pos,vel=get_trajectory(eta,amp,self.current_pos[mode],actual_pos,self.time_step) 
+        
         self.n_move_steps[mode]=len(pos)
         
 
         if mode==self.EYE:
-          self.pos_e=pos  
+          self.pos_e=pos 
+          self.vel_e=vel 
         else:
           self.pos_h=pos
+          self.vel_h=vel
         
       
 
@@ -204,8 +208,10 @@ class EyeHandEnv(gym.Env):
         # update pos
         if mode==self.EYE:
           self.current_pos[mode]=self.pos_e[self.mov_step[mode]]
+          self.current_vel[mode]=self.vel_e[self.mov_step[mode]]
         else:
           self.current_pos[mode]=self.pos_h[self.mov_step[mode]]
+          self.current_vel[mode]=self.vel_h[self.mov_step[mode]]
       else:
         # finish moving, start fixate
         self.stage[mode]=self.FIX
@@ -242,6 +248,8 @@ class EyeHandEnv(gym.Env):
     'aim_hand': np.round(self.aim_at[1],nn),
     'stage_hand':self.stage[1],
     'pos_hand':np.round(self.current_pos[1],nn),
+    'vel_eye':np.round(self.current_vel[0],nn),
+    'vel_hand':np.round(self.current_vel[1],nn),
     }
     return info
 
