@@ -61,16 +61,17 @@ eta_eye=600
 eta_hand=200
 scale_deg=40
 time_step=20
+swapping_std=0.1
 
 PREP,MOV,FIX=-1,0.5,1
-timesteps = 3e6
+timesteps = 4e6
 save_feq_n=timesteps/10
-for swapping_std in [0.1,0.2]:
-    for fitts_W in [0.1,0.05,0.3]:
-        for run in range(3):       
+for ocular_std in [0.05,0.1,0.2]:
+    for fitts_W in [0.0125,0.05,0.1,0.2,0.25]:
+        for run in range(10,13):       
         # Create log dir
-            log_dir = f'./logs6/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/run{run}/'
-            log_dir2 = f'./logs6/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/'
+            log_dir = f'./logs7/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/run{run}/'
+            log_dir2 = f'./logs7/w{fitts_W}d{fitts_D}ocular{ocular_std}swapping{swapping_std}motor{motor_std}eta_eye{eta_eye}eta_hand{eta_hand}scale_deg{scale_deg}/'
             os.makedirs(log_dir, exist_ok=True)
             TRAIN=True
             # Instantiate the env
