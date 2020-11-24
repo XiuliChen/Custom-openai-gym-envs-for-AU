@@ -152,18 +152,18 @@ for ocular_std in [0.05,0.1,0.2]:
 
            
                         row+=1
+                        
+                        fieldnames = info.keys()
+                        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                        if step==0:
+                            writer.writeheader()
+                        writer.writerow(info)
 
                         if row==NN:
                             break
 
                         if done:
                             break
-
-                        fieldnames = info.keys()
-                        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-                        if step==0:
-                            writer.writeheader()
-                        writer.writerow(info)
                     
             learned_behav_data=learned_behav_data[0:row]
             np.savetxt( f'{log_dir}steps_data.csv', learned_behav_data, delimiter=',') 
